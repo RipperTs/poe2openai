@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+uvloop
+fastapi_poe
+httpx
+python-dotenv
