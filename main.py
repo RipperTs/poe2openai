@@ -1,12 +1,6 @@
 import os
 import time
 import uuid
-
-DEFAULT_MODEL = os.getenv("BOT", default="GPT-3.5-Turbo")
-LISTEN_PORT = int(os.getenv("PORT", default=9881))
-BASE_URL = os.getenv("BASE", default="https://api.poe.com/bot/")
-
-# Proxy Server
 import uvicorn
 import json
 
@@ -17,11 +11,13 @@ from fastapi_poe.types import ProtocolMessage
 from fastapi_poe.client import get_bot_response
 import httpx
 from dotenv import load_dotenv
-import os
 
 app = FastAPI()
 load_dotenv()
 
+DEFAULT_MODEL = os.environ.get("DEFAULT_MODEL", "GPT-3.5-Turbo")
+LISTEN_PORT = int(os.environ.get("LISTEN_PORT", default=9881))
+BASE_URL = os.environ.get("BASE_URL", default="https://api.poe.com/bot/")
 # 创建一个代理客户端
 gost_proxy = os.environ.get("GOST_PROXY", "")
 httpx_client = httpx.AsyncClient(proxies={
@@ -172,4 +168,4 @@ if __name__ == "__main__":
         uvloop = None
     if uvloop:
         uvloop.install()
-    uvicorn.run(app, host="0.0.0.0", port=LISTEN_PORT)
+    uvicorn.run(app, host="0.0.0.0", port=LISTEN_PORT, workers=1)
