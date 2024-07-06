@@ -18,13 +18,6 @@ load_dotenv()
 DEFAULT_MODEL = os.environ.get("DEFAULT_MODEL", "GPT-3.5-Turbo")
 LISTEN_PORT = int(os.environ.get("LISTEN_PORT", default=9881))
 BASE_URL = os.environ.get("BASE_URL", default="https://api.poe.com/bot/")
-# 创建一个代理客户端
-gost_proxy = os.environ.get("GOST_PROXY", "")
-httpx_client = httpx.AsyncClient(proxies={
-    "http://": gost_proxy,
-    "https://": gost_proxy
-})
-
 
 def openai_format_messages_to_poe_format(openai_format_messages: list) -> list:
     """Convert OpenAI formatted messages to POE formatted messages."""
@@ -48,8 +41,7 @@ async def get_poe_bot_stream_partials(
             api_key=api_key,
             base_url=BASE_URL,
             skip_system_prompt=False,
-            temperature=temperature,
-            session=httpx_client
+            temperature=temperature
     ):
         yield partial.text
 
