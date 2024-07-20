@@ -13,7 +13,7 @@ poe官方sdk转换openai接口规范, 您必须拥有 poe 订阅会员权限, �
 docker pull registry.cn-hangzhou.aliyuncs.com/ripper/poe2openai
 
 # 运行
-docker run -dit --name poe2openai --restart=always -p 9881:9881 poe2openai
+docker run -dit --name poe2openai --restart=always -p 9881:9881 registry.cn-hangzhou.aliyuncs.com/ripper/poe2openai
 
 # 更新
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower -cR
