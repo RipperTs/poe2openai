@@ -6,17 +6,21 @@ poe官方sdk转换openai接口规范, 您必须拥有 poe 订阅会员权限, �
 
 无法在国内网络访问 poe ,因此请配置代理服务.
 
-## 使用
+## 如何使用
 
 ```shell
-# docker镜像
-docker pull registry.cn-hangzhou.aliyuncs.com/ripper/poe2openai
+# Docker 启动
+docker-compose up -d
 
-# 运行
-docker run -dit --name poe2openai --restart=always -p 9881:9881 registry.cn-hangzhou.aliyuncs.com/ripper/poe2openai
+# 更新镜像
+1. 停止容器
+docker-compose down
 
-# 更新
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower -cR
+2. 删除镜像
+docker rmi poe2openai
+
+3. 重新构建
+docker-compose up -d
 ```
 
 ```shell
@@ -40,8 +44,6 @@ curl --location 'http://127.0.0.1:9881/v1/chat/completions' \
 
 - [x] 流式输出
 - [x] 非流式输出
-- [ ] 模型列表
 - [ ] Function Call
 - [x] Tools Call
 - [ ] 图片解析
-- [ ] Embedding
