@@ -39,8 +39,9 @@ curl --location 'http://127.0.0.1:9881/v1/chat/completions' \
 ## 功能
 
 - [x] 流式输出
-- [x] 非流式输出 (仅用于测试连通性)
+- [x] 非流式输出
 - [ ] 模型列表
 - [ ] Function Call
+- [x] Tools Call
 - [ ] 图片解析
 - [ ] Embedding
