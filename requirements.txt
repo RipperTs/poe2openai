@@ -1,6 +1,6 @@
 fastapi
 uvicorn
 uvloop
-fastapi_poe
+fastapi_poe==0.0.47
 httpx
 python-dotenv

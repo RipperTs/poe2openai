@@ -8,7 +8,8 @@ from fastapi import FastAPI, Request, Header, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 from typing import AsyncGenerator
 from fastapi_poe.types import ProtocolMessage
-from fastapi_poe.client import get_bot_response
+from fastapi_poe.client import get_bot_response, stream_request_base
+import fastapi_poe as fp
 import httpx
 from dotenv import load_dotenv
 
@@ -18,6 +19,7 @@ load_dotenv()
 DEFAULT_MODEL = os.environ.get("DEFAULT_MODEL", "GPT-3.5-Turbo")
 LISTEN_PORT = int(os.environ.get("LISTEN_PORT", default=9881))
 BASE_URL = os.environ.get("BASE_URL", default="https://api.poe.com/bot/")
+
 
 def openai_format_messages_to_poe_format(openai_format_messages: list) -> list:
     """Convert OpenAI formatted messages to POE formatted messages."""
@@ -33,16 +35,29 @@ def openai_format_messages_to_poe_format(openai_format_messages: list) -> list:
 
 
 async def get_poe_bot_stream_partials(
-        api_key: str, poe_format_messages: list, bot_name: str, temperature: float
+        api_key: str, poe_format_messages: list, bot_name: str,
+        temperature: float,
+        tools_dict_list: list
 ) -> AsyncGenerator[str, None]:
-    async for partial in get_bot_response(
-            messages=poe_format_messages,
+    # 构建工具列表
+    tools = [fp.ToolDefinition(**tools_dict) for tools_dict in tools_dict_list]
+    print(tools)
+    # 构建查询请求
+    request = fp.QueryRequest(query=poe_format_messages,
+                              user_id="aikey-wslmf",
+                              message_id=str(uuid.uuid4()),
+                              temperature=temperature,
+                              skip_system_prompt=False,
+                              metadata="")
+    print(request)
+    async for partial in stream_request_base(
+            request=request,
             bot_name=bot_name,
             api_key=api_key,
             base_url=BASE_URL,
-            skip_system_prompt=False,
-            temperature=temperature
+            tools=tools
     ):
+        print(partial)
         yield partial.text
 
 
@@ -123,19 +138,26 @@ async def chat_completions(request: Request, authorization: str = Header(None)):
     # Assuming the header follows the standard format: "Bearer $API_KEY"
     api_key = authorization.split(" ")[1]
     body = await request.json()
+    print(body)
 
     # Extract bot_name (model) and messages from the request body
     bot_name = body.get("model", DEFAULT_MODEL)
     openai_format_messages = body.get("messages", [])
     is_stream = body.get("stream", False)
     temperature = body.get("temperature", 0.7)
+    functions = body.get("functions", [])
+
+    if len(functions) > 0:
+        raise HTTPException(status_code=500, detail="functions is not supported in this version")
+
+    tools = body.get("tools", [])
 
     # Convert OpenAI formatted messages to POE formatted messages
     poe_format_messages = openai_format_messages_to_poe_format(openai_format_messages)
 
     # Get poe bot response
     poe_bot_stream_partials = get_poe_bot_stream_partials(
-        api_key, poe_format_messages, bot_name, temperature
+        api_key, poe_format_messages, bot_name, temperature, tools
     )
 
     if is_stream:
@@ -150,7 +172,6 @@ async def chat_completions(request: Request, authorization: str = Header(None)):
         response = await stream_partials_to_openai_nonstream_response(
             poe_bot_stream_partials, bot_name
         )
-        return JSONResponse(content=response)
 
 
 if __name__ == "__main__":
