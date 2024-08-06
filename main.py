@@ -56,6 +56,9 @@ def format_messages(openai_format_messages: list) -> tuple[list, Optional[List[T
                             content=ctx.get("text", ""),
                         )
                         ordinary_messages.append(ordinary_msg)
+                    if type == "image_url":
+                        url = ctx.get("image_url", "")
+                        # todo: 处理图片, 这里可能是完整的URL,也可能是base64编码
             else:
                 ordinary_msg = ProtocolMessage(
                     role=role,
