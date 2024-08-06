@@ -45,13 +45,23 @@ def format_messages(openai_format_messages: list) -> tuple[list, Optional[List[T
             )
             ordinary_messages.append(ordinary_msg)
 
-        # 用户消息, 默认使用markdown格式
+        # 用户消息, 这里的content可能是字符串或者列表
         elif role == "user":
-            ordinary_msg = ProtocolMessage(
-                role=role,
-                content=content,
-            )
-            ordinary_messages.append(ordinary_msg)
+            if isinstance(content, list):
+                for ctx in content:
+                    type = ctx.get("type", "text")
+                    if type == "text":
+                        ordinary_msg = ProtocolMessage(
+                            role=role,
+                            content=ctx.get("text", ""),
+                        )
+                        ordinary_messages.append(ordinary_msg)
+            else:
+                ordinary_msg = ProtocolMessage(
+                    role=role,
+                    content=content,
+                )
+                ordinary_messages.append(ordinary_msg)
 
         #  机器人消息
         elif role == "assistant":
@@ -312,7 +322,7 @@ async def not_stream_response(
             "index": 0,
             "message": {
                 "role": "assistant",
-                "content": None,
+                "content": content if content != "" else None,
                 "tool_calls": tool_calls
             },
             "logprobs": None,
