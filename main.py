@@ -7,7 +7,8 @@ import json
 from fastapi import FastAPI, Request, Header, HTTPException
 from fastapi.responses import StreamingResponse
 from typing import AsyncGenerator, Optional, List
-from fastapi_poe.types import ProtocolMessage, ToolDefinition, QueryRequest, ToolCallDefinition, ToolResultDefinition
+from fastapi_poe.types import ProtocolMessage, ToolDefinition, QueryRequest, ToolCallDefinition, ToolResultDefinition, \
+    Attachment
 from fastapi_poe.types import PartialResponse as BotMessage
 from fastapi_poe.client import stream_request_base, PROTOCOL_VERSION
 from dotenv import load_dotenv
@@ -48,17 +49,21 @@ def format_messages(openai_format_messages: list) -> tuple[list, Optional[List[T
         # 用户消息, 这里的content可能是字符串或者列表
         elif role == "user":
             if isinstance(content, list):
+                text = ""
+                url = ""
                 for ctx in content:
                     type = ctx.get("type", "text")
                     if type == "text":
-                        ordinary_msg = ProtocolMessage(
-                            role=role,
-                            content=ctx.get("text", ""),
-                        )
-                        ordinary_messages.append(ordinary_msg)
+                        text = ctx.get("text", "")
                     if type == "image_url":
-                        url = ctx.get("image_url", "")
+                        url = ctx.get("image_url", {}).get("url", "")
                         # todo: 处理图片, 这里可能是完整的URL,也可能是base64编码
+
+                ordinary_msg = ProtocolMessage(
+                    role=role,
+                    content=text
+                )
+                ordinary_messages.append(ordinary_msg)
             else:
                 ordinary_msg = ProtocolMessage(
                     role=role,
