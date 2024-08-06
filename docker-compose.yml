@@ -1,0 +1,13 @@
+version: '3.3'
+services:
+  poe:
+    container_name: poe2openai
+    image: registry.cn-hangzhou.aliyuncs.com/ripper/poe2openai:latest
+    restart: always
+    ports:
+      - 9881:9881
+    environment:
+      - LISTEN_PORT=9881
+      - RELOAD=false
+      - DEFAULT_MODEL=GPT-3.5-Turbo
+      - BASE_URL=https://api.poe.com/bot/
