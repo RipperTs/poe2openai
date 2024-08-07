@@ -17,7 +17,7 @@ docker-compose up -d
 docker-compose down
 
 2. 删除镜像
-docker rmi poe2openai
+docker rmi registry.cn-hangzhou.aliyuncs.com/ripper/poe2openai
 
 3. 重新构建
 docker-compose up -d
