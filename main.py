@@ -7,16 +7,26 @@ import json
 from fastapi import FastAPI, Request, Header, HTTPException
 from fastapi.responses import StreamingResponse
 from typing import AsyncGenerator, Optional, List
-from fastapi_poe.types import ProtocolMessage, ToolDefinition, QueryRequest, ToolCallDefinition, ToolResultDefinition, \
-    Attachment
+from fastapi_poe.types import ProtocolMessage, ToolDefinition, QueryRequest, ToolCallDefinition, ToolResultDefinition
 from fastapi_poe.types import PartialResponse as BotMessage
 from fastapi_poe.client import stream_request_base, PROTOCOL_VERSION
 from dotenv import load_dotenv
+from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 
 app = FastAPI()
+# 跨域问题处理
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins="*",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+# 加载环境变量
 load_dotenv()
 
+# 默认参数
 DEFAULT_MODEL = os.environ.get("DEFAULT_MODEL", "GPT-3.5-Turbo")
 BASE_URL = os.environ.get("BASE_URL", default="https://api.poe.com/bot/")
 
@@ -235,7 +245,7 @@ async def chat_completions(request: Request, authorization: str = Header(None)):
         stream = stream_response(poe_bot_stream_partials, bot_name, tools)
         return StreamingResponse(
             stream,
-            media_type="text/plan",
+            media_type="text/event-stream",
         )
 
     response = await not_stream_response(
