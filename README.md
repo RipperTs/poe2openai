@@ -13,13 +13,10 @@ poe官方sdk转换openai接口规范, 您必须拥有 poe 订阅会员权限, �
 docker-compose up -d
 
 # 更新镜像
-1. 停止容器
-docker-compose down
+1. 拉取最新镜像
+docker-compose pull
 
-2. 删除镜像
-docker rmi registry.cn-hangzhou.aliyuncs.com/ripper/poe2openai
-
-3. 重新构建
+2. 使用最新镜像
 docker-compose up -d
 ```
 
