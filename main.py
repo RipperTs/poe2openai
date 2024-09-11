@@ -214,6 +214,9 @@ async def stream_response(
     else:
         yield f"data: [DONE]\n\n"
 
+@app.get("/")
+async def index():
+    return {"message": "Hi, Poe!"}
 
 @app.post("/v1/chat/completions")
 async def chat_completions(request: Request, authorization: str = Header(None)):
