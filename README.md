@@ -23,6 +23,13 @@ docker rmi registry.cn-hangzhou.aliyuncs.com/ripper/poe2openai
 docker-compose up -d
 ```
 
+## Development
+
+```shell
+# 打包镜像(使用阿里云容器镜像服务)
+docker build --platform linux/amd64 -f ./Dockerfile -t registry.cn-hangzhou.aliyuncs.com/ripper/poe2openai:latest .
+```
+
 ```shell
 # 请求示例
 curl --location 'http://127.0.0.1:9881/v1/chat/completions' \
