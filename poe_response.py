@@ -25,7 +25,7 @@ class PoeResponse:
         response_template = {
             "id": str(uuid.uuid4()),
             "object": "chat.completion.chunk",
-            "created": time.time(),
+            "created": int(time.time()),
             "model": bot_name,
             "choices": [
                 {
@@ -45,8 +45,12 @@ class PoeResponse:
             if len(tools) > 0 and partial.data is not None:
                 is_use_tool = True
                 yield f"data: {json.dumps(partial.data, ensure_ascii=False)}\n\n"
-            else:
-                # 其他响应正常使用模板处理
+            else: # 其他响应正常使用模板处理
+
+                # OpenAI的思考模型直接跳过无用的Thinking...输出内容
+                if 'Thinking...' in partial.text:
+                    continue
+
                 response_template["choices"][0]["delta"]["content"] = partial.text
                 yield f"data: {json.dumps(response_template)}\n\n"
 
@@ -77,7 +81,7 @@ class PoeResponse:
         response_template = {
             "id": str(uuid.uuid4()),
             "object": "chat.completion",
-            "created": time.time(),
+            "created": int(time.time()),
             "model": bot_name,
             "system_fingerprint": "fp_44709d6fcb",
             "choices": [
@@ -124,6 +128,9 @@ class PoeResponse:
                 if item_content is not None:
                     content += item_content
             else:
+                # OpenAI的思考模型直接跳过无用的Thinking...输出内容
+                if 'Thinking...' in partial.text:
+                    continue
                 content += partial.text
 
         if is_use_tool is False:
