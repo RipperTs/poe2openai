@@ -63,7 +63,7 @@ async def chat_completions(request: Request, authorization: str = Header(None)):
     ordinary_messages, tool_calls_messages, tool_results_messages = message_convert.format_messages(
         openai_format_messages)
 
-    # 获取机器人流式响应
+    # 请求Poe接口来获取机器人响应
     poe_bot_stream_partials = poe_request.stream_request(
         api_key, ordinary_messages, tool_calls_messages,
         tool_results_messages, bot_name, temperature, tools

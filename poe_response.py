@@ -17,10 +17,11 @@ class PoeResponse:
                               ) -> AsyncGenerator[str, None]:
         """
         流式输出
-        :param poe_bot_stream_partials:
-        :param bot_name:
-        :param tools:
-        :return:
+
+        :param poe_bot_stream_partials: 异步生成器，返回 BotMessage
+        :param bot_name: 机器人名称
+        :param tools: 工具列表
+        :return: 异步生成器返回处理后的流式数据
         """
         response_template = {
             "id": str(uuid.uuid4()),
@@ -32,6 +33,7 @@ class PoeResponse:
                     "index": 0,
                     "delta": {
                         "role": "assistant",
+                        # 正常响应时使用content字段；若推理过程处于进行中，则临时使用reasoning_content字段显示当前chunk的内容。
                         "content": ""
                     },
                     "logprobs": None,
@@ -39,29 +41,65 @@ class PoeResponse:
                 }
             ],
         }
+
+        # 标记是否进入推理状态
+        in_reasoning = False
         is_use_tool = False
+
         async for partial in poe_bot_stream_partials:
-            # 有工具传入并且partial.data不为空时，直接返回data, 也就是原始数据输出
+            # 如果有工具并且partial.data不为空，则直接返回原始数据
             if len(tools) > 0 and partial.data is not None:
                 is_use_tool = True
                 yield f"data: {json.dumps(partial.data, ensure_ascii=False)}\n\n"
-            else: # 其他响应正常使用模板处理
+                continue
 
-                # OpenAI的思考模型直接跳过无用的Thinking...输出内容
-                if 'Thinking...' in partial.text:
-                    continue
+            # 跳过无用的Thinking...输出
+            if 'Thinking...' in partial.text:
+                continue
 
-                response_template["choices"][0]["delta"]["content"] = partial.text
-                yield f"data: {json.dumps(response_template)}\n\n"
+            # 非推理状态下
+            if not in_reasoning:
+                if partial.text.startswith("```text\n"):
+                    # 进入推理状态：去除开头标识
+                    current_chunk = partial.text[len("```text\n"):]
+                    # 如果当前chunk同时包含结束标识符，则立即结束推理
+                    if current_chunk.strip().endswith("```"):
+                        # 去掉结尾的 "```" 标识
+                        final_text = current_chunk.strip()[:-3]
+                        response_template["choices"][0]["delta"]["content"] = final_text
+                        response_template["choices"][0]["delta"].pop("reasoning_content", None)
+                        in_reasoning = False
+                    else:
+                        response_template["choices"][0]["delta"]["reasoning_content"] = current_chunk
+                        response_template["choices"][0]["delta"]["content"] = None
+                        in_reasoning = True
+                else:
+                    # 普通响应处理：直接写入content字段，并删除可能残留的reasoning_content字段
+                    response_template["choices"][0]["delta"]["content"] = partial.text
+                    response_template["choices"][0]["delta"].pop("reasoning_content", None)
+            else:
+                # 如果已经进入推理状态，则本次返回的chunk只显示当前内容，不做累积
+                if partial.text.strip().endswith("```"):
+                    # 当前chunk带有结束标识，则取出结束标识前的文本，并结束推理状态
+                    current_chunk = partial.text.rstrip()[:-3]
+                    response_template["choices"][0]["delta"]["content"] = current_chunk
+                    response_template["choices"][0]["delta"].pop("reasoning_content", None)
+                    in_reasoning = False
+                else:
+                    # 仍在推理状态，直接覆盖reasoning_content（不累加之前内容）
+                    response_template["choices"][0]["delta"]["reasoning_content"] = partial.text
+                    response_template["choices"][0]["delta"]["content"] = None
 
-        if is_use_tool is False:
-            # Termination sequence
-            response_template["choices"][0]["delta"] = {}  # Empty 'delta' field
-            # Set 'finish_reason' to 'stop'
+            yield f"data: {json.dumps(response_template, ensure_ascii=False)}\n\n"
+
+        if not is_use_tool:
+            # 流式输出结束时，发送终止序列
+            response_template["choices"][0]["delta"] = {}  # 清空delta字段
             response_template["choices"][0]["finish_reason"] = "stop"
-            yield f"data: {json.dumps(response_template)}\n\ndata: [DONE]\n\n"
+            yield f"data: {json.dumps(response_template, ensure_ascii=False)}\n\ndata: [DONE]\n\n"
         else:
             yield f"data: [DONE]\n\n"
+
 
     async def not_stream_response(self,
                                   poe_bot_stream_partials: AsyncGenerator[BotMessage, None],
